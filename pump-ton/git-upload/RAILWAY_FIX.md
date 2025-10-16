@@ -28,13 +28,7 @@ Railway не может найти пакет `ton-connect-sdk` в npm реес�
 
 ## 🚀 Как применить исправления:
 
-### Способ 1: Автоматический скрипт
-```cmd
-cd C:\Users\User\Downloads\pump-ton\git-upload
-fix-dependencies.bat
-```
-
-### Способ 2: Ручные команды
+### Ручные команды Git:
 ```cmd
 cd C:\Users\User\Downloads\pump-ton\git-upload
 git add .

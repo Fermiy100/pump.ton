@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: pumpton-postgres
+    environment:
+      POSTGRES_DB: pumpton
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pumpton-network
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: pumpton-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - pumpton-network
+    restart: unless-stopped
+
+  # Backend API Server
+  backend:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    container_name: pumpton-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/pumpton
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=your_super_secret_jwt_key_change_in_production
+      - JWT_REFRESH_SECRET=your_refresh_secret_key
+      - TON_RPC_URL=https://toncenter.com/api/v2/jsonRPC
+      - TON_NETWORK=mainnet
+      - UPLOAD_DIR=uploads
+      - MAX_FILE_SIZE=10485760
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX_REQUESTS=100
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - pumpton-network
+    restart: unless-stopped
+
+  # Frontend React App
+  frontend:
+    build:
+      context: ../client
+      dockerfile: Dockerfile
+    container_name: pumpton-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://backend:5000
+      - REACT_APP_WS_URL=ws://backend:5000
+    depends_on:
+      - backend
+    networks:
+      - pumpton-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  pumpton-network:
+    driver: bridge
