@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  address   String   @unique
+  username  String?
+  avatar    String?
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tokens    Token[]
+  streams   Stream[]
+  trades    Trade[]
+  donations Donation[]
+
+  @@map("users")
+}
+
+model Token {
+  id          String   @id @default(cuid())
+  address     String   @unique
+  name        String
+  symbol      String
+  description String?
+  image       String?
+  decimals    Int      @default(9)
+  totalSupply String
+  price       Float    @default(0)
+  marketCap   Float    @default(0)
+  volume24h   Float    @default(0)
+  change24h   Float    @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  creatorId String
+  creator   User   @relation(fields: [creatorId], references: [id])
+  trades    Trade[]
+  streams   Stream[]
+
+  @@map("tokens")
+}
+
+model Trade {
+  id        String   @id @default(cuid())
+  tokenId   String
+  userId    String
+  type      TradeType
+  amount    String
+  price     Float
+  total     Float
+  createdAt DateTime @default(now())
+
+  // Relations
+  token Token @relation(fields: [tokenId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@map("trades")
+}
+
+model Stream {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  thumbnail   String?
+  streamKey   String      @unique
+  isLive      Boolean     @default(false)
+  viewers     Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  creatorId String
+  creator   User   @relation(fields: [creatorId], references: [id])
+  tokenId   String?
+  token     Token? @relation(fields: [tokenId], references: [id])
+  donations Donation[]
+
+  @@map("streams")
+}
+
+model Donation {
+  id        String   @id @default(cuid())
+  amount    String
+  message   String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  streamId String
+  stream   Stream @relation(fields: [streamId], references: [id])
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+
+  @@map("donations")
+}
+
+enum TradeType {
+  BUY
+  SELL
+}
